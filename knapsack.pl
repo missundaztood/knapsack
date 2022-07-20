@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Getopt::Long qw(:config posix_default no_ignore_case gnu_compat bundling);
+use List::Util qw(max);
 
 sub usage {
     my $code = shift;
@@ -43,6 +44,7 @@ sub main {
         m!^(?<name>.*?)\t(?<weight>[\d\.,]+)(\t(?<value_or_cofficient>[\d\.,]+))?$! or next;
         my ($name, $weight, $value_or_cofficient) = ($+{name}, $+{weight}, $+{value_or_cofficient});
         $weight =~ s/,//;
+        $weight > max(@$max_weights) and usage(1, "最大のMAX_WEIGHTを超えるweightが指定されています: $_");
         $value_or_cofficient =~ s/,//;
         my $value = $opts->{cofficient} ? $weight * $value_or_cofficient : ($value_or_cofficient or $weight);
         $name2item->{$name} = { name => $name, weight => $weight, value_or_cofficient => $value_or_cofficient, value => $value };

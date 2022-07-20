@@ -35,4 +35,6 @@ inc/
 /*.zip
 
 # original ignore files
+/work/
 /*.tsv
+/*.xlsx
