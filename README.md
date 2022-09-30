@@ -9,6 +9,8 @@ $ ./knapsack.pl --help
 usage: ./knapsack.pl [options] MAX_WEIGHT[:MAX_WEIGHT:...] FILE[S...]
 options:
   -c, --cofficient  value (3つ目の値) を係数で指定する。
+  -s, --sort=SORTBY number (default), original
+  -n, --only-number ナップサックの番号のみ出力する。
   -v, --verbose     詳細な情報を出力する。
   -h, --help        このメッセージを表示する。
 
@@ -97,6 +99,20 @@ $ cat items-c.tsv | ./knapsack.pl --cofficient 4600:4100:5000
 3       item6   726     1
 3       item8   3168    1
 4       item9   693     1
+
+# `--only-number` オプションを指定して、出力をナップサックの番号だけにできる。
+# また、`--sort` オプションを指定して、出力の順序を入力のままにできる。
+# tsvの情報をスプレッドシートで管理していて、スプレッドシートの数式を上書きせずに番号を貼り付けたい場合に有効に使える。
+$ cat items-c.tsv | ./knapsack.pl --cofficient --sort=original --only-number 5000
+4
+3
+3
+5
+2
+3
+6
+7
+3
 ```
 
 

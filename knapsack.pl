@@ -17,6 +17,8 @@ sub usage {
 usage: $0 [options] MAX_WEIGHT[:MAX_WEIGHT:...] FILE[S...]
 options:
   -c, --cofficient  value (3つ目の値) を係数で指定する。
+  -s, --sort=SORTBY number (default), original
+  -n, --only-number ナップサックの番号のみ出力する。
   -v, --verbose     詳細な情報を出力する。
   -h, --help        このメッセージを表示する。
 
@@ -32,17 +34,21 @@ sub main {
         };
     GetOptions($opts,
                "cofficient|c",
+               "sort|s=s",
+               "only-number|n",
                "verbose|v",
                "help|h" => sub { usage(0) });
     scalar @ARGV or usage(0);
     $opts->{verbose} and print Data::Dumper->Dump([$opts], [qw(opts)]);
     my $max_weights = [split ':', shift @ARGV];
     map { s/,//g; /^\d+$/ or usage(1, "MAX_WEIGHTは数値で指定してください。") } @$max_weights;
+    my $names = [];
     my $name2item = {};
     while (<>) {
         m!^\s*#.*$! and next;
         m!^(?<name>.*?)\t(?<weight>[\d\.,]+)(\t(?<value_or_cofficient>[\d\.,]+))?$! or next;
         my ($name, $weight, $value_or_cofficient) = ($+{name}, $+{weight}, $+{value_or_cofficient});
+        push @$names, $name;
         $weight =~ s/,//;
         $weight > max(@$max_weights) and usage(1, "最大のMAX_WEIGHTを超えるweightが指定されています: $_");
         $value_or_cofficient =~ s/,//;
@@ -50,19 +56,35 @@ sub main {
         $name2item->{$name} = { name => $name, weight => $weight, value_or_cofficient => $value_or_cofficient, value => $value };
     }
     $opts->{verbose} and print Data::Dumper->Dump([$name2item], [qw(name2item)]);
-    my $solved_name2items = [];
+    my $solved_name2items_by_number = [];
+    my $solved_name2item = {};
     my $max_weight;
     for (my $i = 0; scalar keys %$name2item > 0; ++$i) {
         $max_weight = (shift @$max_weights or $max_weight);
         my $solved_names = solve($opts, $max_weight, $name2item);
-        push @$solved_name2items, [];
+        push @$solved_name2items_by_number, [];
         map {
-            push @{$solved_name2items->[$i]}, $name2item->{$_};
+            $name2item->{$_}->{number} = $i + 1;
+            push @{$solved_name2items_by_number->[$i]}, $name2item->{$_};
+            $solved_name2item->{$_} = $name2item->{$_};
             delete $name2item->{$_};
         } sort @$solved_names;
     }
-    while (my ($i, $items) = each @$solved_name2items) {
-        map { printf "%s\t$_->{name}\t$_->{weight}\t$_->{value_or_cofficient}\n", $i + 1 } @$items;
+    if ($opts->{sort} and $opts->{sort} eq 'original') {
+        for my $name (@$names) {
+            my $item = $solved_name2item->{$name};
+            if ($opts->{'only-number'}) {
+                printf "$item->{number}\n";
+            }
+            else {
+                printf "$item->{number}\t$name\t$item->{weight}\t$item->{value_or_cofficient}\n";
+            }
+        }
+    }
+    else {
+        while (my ($i, $items) = each @$solved_name2items_by_number) {
+            map { printf "%s\t$_->{name}\t$_->{weight}\t$_->{value_or_cofficient}\n", $i + 1 } @$items;
+        }
     }
 }
 
